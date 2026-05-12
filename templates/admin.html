@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card shadow-sm">
+  <div class="card-body p-4">
+    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2 mb-2">
+      <div>
+        <h1 class="h2 mb-1">{{ t('admin_title') }}</h1>
+        <p class="text-body-secondary mb-0">{{ t('admin_help') }}</p>
+      </div>
+      <span class="badge rounded-pill text-bg-info">{{ t('auto_refresh') }}</span>
+    </div>
+    <div class="admin-toolbar d-flex flex-wrap align-items-center gap-2 mb-3">
+      <a class="btn btn-maat-nav btn-sm" href="/admin/summary">{{ t('admin_summary_link') }}</a>
+      <a class="btn btn-outline-success btn-sm" href="/admin/export/leaderboard.csv">{{ t('export_final_csv') }}</a>
+      <a class="btn btn-outline-success btn-sm" href="/admin/export/session.zip">{{ t('export_session_zip') }}</a>
+      <form method="post" action="/admin/logout" class="d-inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-outline-secondary btn-sm" type="submit">{{ t('admin_logout') }}</button></form>
+      <form method="post" action="/admin/submissions/toggle" class="d-inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="target" value="admin">
+        {% if submissions_paused %}
+        <button class="btn btn-maat-submit btn-sm" name="action" value="resume_submissions" type="submit">{{ t('resume_submissions_button') }}</button>
+        {% else %}
+        <button class="btn btn-outline-warning btn-sm" name="action" value="pause_submissions" type="submit">{{ t('pause_submissions_button') }}</button>
+        {% endif %}
+      </form>
+      <span id="submissions-paused-badge" class="badge rounded-pill {% if submissions_paused %}text-bg-warning{% else %}text-bg-success{% endif %}">{% if submissions_paused %}{{ t('submissions_paused_short') }}{% else %}{{ t('submissions_open_short') }}{% endif %}</span>
+      <span class="badge rounded-pill text-bg-secondary">CPU <span id="admin-cpu">{{ system.cpu_percent if system.cpu_percent is not none else '—' }}%</span></span>
+      <span class="badge rounded-pill text-bg-secondary">RAM <span id="admin-ram">{{ system.ram_percent if system.ram_percent is not none else '—' }}%</span></span>
+    </div>
+
+    <div class="alert alert-secondary small mb-3" role="status">
+      <strong>Configuration effective</strong> —
+      Projet : <code>{{ cfg.project_id }}</code> ·
+      Langages : {% for l in cfg.allowed_languages %}<code>{{ l }}</code>{% if not loop.last %}, {% endif %}{% endfor %} ·
+      Métriques : {% for m in project_metrics %}<code>{{ m.name }}</code>{% if not loop.last %}, {% endif %}{% endfor %} ·
+      Docker : <code>{{ cfg.docker_network }}</code>, read-only=<code>{{ cfg.docker_read_only_root_filesystem }}</code>, user=<code>{{ cfg.docker_container_user }}</code>.
+      Changement de projet : utiliser <code>./manage-maat.sh set-project &lt;id&gt;</code> avant le lancement du serveur.
+    </div>
+    <div class="mb-3">
+      <input id="filter" class="form-control" placeholder="{{ t('admin_filter') }}">
+    </div>
+    {% include "_status_legend.html" %}
+    <div class="table-responsive">
+      <table id="admin-table" class="table table-hover align-middle">
+        <thead><tr><th>ID</th><th>{{ t('group') }}</th><th>{{ t('student') }}</th><th>{{ t('heuristic') }}</th><th>{{ t('status') }}</th><th>{{ t('score') }}</th><th>{{ t('instances_passed') }}</th><th>{{ t('instances_failed') }}</th><th>{{ t('total_runtime') }}</th><th>{{ t('date') }}</th><th>{{ t('links') }}</th></tr></thead>
+        <tbody id="admin-rows">
+        {% for s in statuses %}
+        {% set m = status_meta.get(s.status, {'abbr': s.status, 'label': s.status, 'class': 'text-bg-secondary'}) %}
+        <tr>
+          <td data-label="ID">{{ s.submission_id }}</td>
+          <td data-label="{{ t('group') }}">{{ s.group }}</td>
+          <td data-label="{{ t('student') }}">{{ s.animal|default('') }} {{ s.first_name }} {{ s.last_name }}</td>
+          <td data-label="{{ t('heuristic') }}">{{ s.heuristic_name|default("—") }}</td>
+          <td data-label="{{ t('status') }}"><span class="badge {{ m.class }}" title="{{ m.label }}">{{ m.abbr }}</span></td>
+          <td data-label="{{ t('score') }}">{{ s.score_total if s.score_total is not none else '—' }}</td>
+          <td data-label="{{ t('instances_passed') }}">{{ s.passed_instances|default(s.valid_instances) }}/{{ s.total_instances }}</td>
+          <td data-label="{{ t('instances_failed') }}">{{ s.failed_instances|default(0) }}/{{ s.total_instances }}</td>
+          <td data-label="{{ t('total_runtime') }}">{{ s.total_runtime_seconds|default('—') }}</td>
+          <td data-label="{{ t('date') }}">{{ s.submitted_at }}</td>
+          <td data-label="{{ t('links') }}"><a href="/submission/{{ s.submission_id }}">{{ t('detail') }}</a> · <a href="/download/{{ s.submission_id }}">{{ t('zip') }}</a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="11">{{ t('no_submission_general') }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+<script>
+const adminCsrfToken = {{ csrf_token()|tojson }};
+const adminI18n = {{ i18n|tojson }};
+const adminStatusMeta = {{ status_meta|tojson }};
+const input = document.getElementById("filter");
+async function refreshAdminSystem(){
+  const r = await fetch(`/api/admin/system`, {cache:'no-store'});
+  if(!r.ok) return;
+  const data = await r.json();
+  const cpu = document.getElementById('admin-cpu');
+  const ram = document.getElementById('admin-ram');
+  if(cpu) cpu.textContent = data.cpu_percent === null || data.cpu_percent === undefined ? '—%' : `${data.cpu_percent}%`;
+  if(ram) ram.textContent = data.ram_percent === null || data.ram_percent === undefined ? '—%' : `${data.ram_percent}%`;
+}
+function adminFormatScore(v){ return v === null || v === undefined ? "—" : Number(v).toLocaleString(window.MAAT_LANG || undefined, {maximumFractionDigits: 3}); }
+function adminFormatTime(v){ return v === null || v === undefined ? "—" : `${Number(v).toLocaleString(window.MAAT_LANG || undefined, {maximumFractionDigits: 3})} s`; }
+function applyAdminFilter(){
+  const q = (input ? input.value : '').toLowerCase();
+  for(const tr of document.querySelectorAll("#admin-table tbody tr")){
+    tr.style.display = tr.textContent.toLowerCase().includes(q) ? "" : "none";
+  }
+}
+async function refreshAdminTable(){
+  const tbody = document.getElementById('admin-rows');
+  if(!tbody) return;
+  const r = await fetch(`/api/admin/submissions`, {cache:'no-store'});
+  if(!r.ok) return;
+  const data = await r.json();
+  const rows = data.rows || [];
+  if(!rows.length){
+    tbody.innerHTML = `<tr><td colspan="11">${adminI18n.no_submission_general || 'Aucun dépôt.'}</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows.map(row => {
+    const m = adminStatusMeta[row.status] || {abbr: row.status || '—', label: row.status || '—', class: 'text-bg-secondary'};
+    const total = row.total_instances || 0;
+    return `<tr>
+      <td data-label="ID">${row.submission_id || ''}</td>
+      <td data-label="${adminI18n.group}">${row.group || ''}</td>
+      <td data-label="${adminI18n.student}">${row.animal || ''} ${row.first_name || ''} ${row.last_name || ''}</td>
+      <td data-label="${adminI18n.heuristic}">${row.heuristic_name || '—'}</td>
+      <td data-label="${adminI18n.status}"><span class="badge ${m.class}" title="${m.label}">${m.abbr}</span></td>
+      <td data-label="${adminI18n.score}">${adminFormatScore(row.score_total)}</td>
+      <td data-label="${adminI18n.instances_passed}">${row.passed_instances ?? 0}/${total}</td>
+      <td data-label="${adminI18n.instances_failed}">${row.failed_instances ?? 0}/${total}</td>
+      <td data-label="${adminI18n.total_runtime}">${adminFormatTime(row.total_runtime_seconds)}</td>
+      <td data-label="${adminI18n.date}">${row.submitted_at || ''}</td>
+      <td data-label="${adminI18n.links}"><a href="/submission/${row.submission_id}">${adminI18n.detail}</a> · <a href="/download/${row.submission_id}">${adminI18n.zip}</a></td>
+    </tr>`;
+  }).join('');
+  applyAdminFilter();
+}
+if(input){ input.addEventListener("input", applyAdminFilter); }
+refreshAdminTable();
+refreshAdminSystem();
+setInterval(refreshAdminTable, 10000);
+setInterval(refreshAdminSystem, 5000);
+</script>
+{% endblock %}

@@ -9,7 +9,7 @@
   },
   "interface":
   {
-    "school_name":   {"value": {"fr": "Polytech Paris-Saclay", "en": "Polytech Paris-Saclay"}, "comment": "School name displayed in the web interface and generated documents."},
+    "school_name":   {"value": {"fr": "Ecole / Université", "en": "School name / University"}, "comment": "School name displayed in the web interface and generated documents."},
     "course_name":   {"value": {"fr": "Plateforme de projets", "en": "Project platform"}, "comment": "Course name displayed in the web interface and generated documents."},
     "student_level": {"value": {"fr": "Version multi-langages", "en": "Multi-language version"}, "comment": "Student level or subtitle displayed in the web interface and generated documents."}
   },

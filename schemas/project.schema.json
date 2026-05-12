@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MAAT project profile",
+  "type": "object",
+  "required": [
+    "project",
+    "interface",
+    "students",
+    "submission_limits",
+    "teaching_session",
+    "directories",
+    "data",
+    "scoring"
+  ],
+  "additionalProperties": true
+}

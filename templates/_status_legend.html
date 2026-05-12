@@ -1,0 +1,15 @@
+{% set legend_keys = status_legend_keys|default(['queued', 'running', 'done', 'canceled', 'compile_error', 'compile_timeout', 'runtime_error', 'timeout', 'invalid_output', 'invalid_archive', 'missing_expected_file', 'internal_error', 'failed']) %}
+{% set ns = namespace(seen=[]) %}
+<div class="status-legend d-flex flex-wrap align-items-center gap-2 mb-3" aria-label="{{ t('legend_title') }}">
+  <strong>{{ t('legend_title') }}</strong>
+  {% for key in legend_keys %}
+    {% set m = status_meta.get(key) %}
+    {% if m %}
+      {% set sig = m.abbr ~ '|' ~ m.label %}
+      {% if sig not in ns.seen %}
+        {% set ns.seen = ns.seen + [sig] %}
+        <span class="status-legend-item"><span class="badge status-legend-badge {{ m.class }}" title="{{ m.label }}">{{ m.abbr }}</span><span>{{ m.label }}</span></span>
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+</div>

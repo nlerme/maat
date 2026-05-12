@@ -1,0 +1,38 @@
+{
+  "id": "java",
+  "name": {
+    "fr": "Java",
+    "en": "Java"
+  },
+  "docker_image": "maat-java-runner:latest",
+  "allowed_extensions": [
+    ".java"
+  ],
+  "entrypoints": [
+    "Main.java",
+    "src/Main.java"
+  ],
+  "allow_custom_build_file": false,
+  "build_command": "set -e; if [ -d src ]; then javac -d . src/*.java; else javac *.java; fi; test -f Main.class",
+  "run_command": "java Main {instance_file}",
+  "compile_timeout_seconds": 30,
+  "run_timeout_seconds": 180,
+  "compile_resources": {
+    "cpus": "4",
+    "memory": "1g",
+    "pids_limit": 256
+  },
+  "run_resources": {
+    "cpus": "2",
+    "memory": "512m",
+    "pids_limit": 128
+  },
+  "forbidden_patterns": [
+    "Runtime.getRuntime",
+    "ProcessBuilder",
+    "System.exit",
+    "java.net",
+    "java.nio.file.Files.delete",
+    "Files.walk"
+  ]
+}

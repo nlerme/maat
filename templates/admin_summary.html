@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card shadow-sm mb-4">
+  <div class="card-body p-4">
+    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2 mb-2">
+      <h1 class="h2 mb-0">{{ t('admin_summary_title') }}</h1>
+      <span class="badge rounded-pill text-bg-info">{{ t('auto_refresh') }}</span>
+    </div>
+    <p class="text-body-secondary">{{ t('admin_summary_help') }}</p>
+    <div class="admin-toolbar d-flex flex-wrap align-items-center gap-2 mb-3">
+      <a class="btn btn-maat-nav btn-sm" href="/admin">{{ t('back_to_admin_main') }}</a>
+      <a class="btn btn-outline-success btn-sm" href="/admin/export/leaderboard.csv">{{ t('export_final_csv') }}</a>
+      <a class="btn btn-outline-success btn-sm" href="/admin/export/session.zip">{{ t('export_session_zip') }}</a>
+      <form method="post" action="/admin/logout" class="d-inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-outline-secondary btn-sm" type="submit">{{ t('admin_logout') }}</button></form>
+      <form method="post" class="d-inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% if submissions_paused %}
+        <button class="btn btn-maat-submit btn-sm" name="action" value="resume_submissions" type="submit">{{ t('resume_submissions_button') }}</button>
+        {% else %}
+        <button class="btn btn-outline-warning btn-sm" name="action" value="pause_submissions" type="submit">{{ t('pause_submissions_button') }}</button>
+        {% endif %}
+      </form>
+      <span id="submissions-paused-badge" class="badge rounded-pill {% if submissions_paused %}text-bg-warning{% else %}text-bg-success{% endif %}">{% if submissions_paused %}{{ t('submissions_paused_short') }}{% else %}{{ t('submissions_open_short') }}{% endif %}</span>
+      <span class="badge rounded-pill text-bg-secondary">CPU <span id="admin-cpu">{{ data.system.cpu_percent if data.system.cpu_percent is not none else '—' }}%</span></span>
+      <span class="badge rounded-pill text-bg-secondary">RAM <span id="admin-ram">{{ data.system.ram_percent if data.system.ram_percent is not none else '—' }}%</span></span>
+    </div>
+    {% if notice %}<div class="alert alert-info">{{ notice }}</div>{% endif %}
+    {% include "_status_legend.html" %}
+    <div class="row g-3">
+      <div class="col-12 col-lg-6">
+        <h2 class="admin-action-title">{{ t('unlock_submission') }}</h2>
+        <form method="post" class="d-flex gap-2 flex-wrap">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input class="form-control" name="token" placeholder="{{ t('admin_token_label') }}" required>
+          <button class="btn btn-maat-submit" name="action" value="unlock" type="submit">{{ t('unlock_button') }}</button>
+        </form>
+      </div>
+      <div class="col-12 col-lg-6">
+        <h2 class="admin-action-title">{{ t('purge_submissions') }}</h2>
+        <form method="post" class="d-flex gap-2 flex-wrap" onsubmit="return confirm('{{ t('confirm_purge') }}')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input class="form-control" name="token" placeholder="{{ t('admin_token_label') }}" required>
+          <button class="btn btn-outline-danger" name="action" value="purge" type="submit">{{ t('purge_button') }}</button>
+        </form>
+      </div>
+      <div class="col-12">
+        <h2 class="admin-action-title">{{ t('purge_all_submissions') }}</h2>
+        <form method="post" onsubmit="return confirm('{{ t('confirm_purge_all') }}')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-outline-danger" name="action" value="purge_all" type="submit">{{ t('purge_all_button') }}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="row g-4 admin-summary-grid">
+  <div class="col-12 col-lg-6">
+    <section class="card shadow-sm h-100"><div class="card-body p-4">
+      <h2 class="h4">{{ t('submissions_by_group') }}</h2>
+      <div class="table-responsive"><table class="table align-middle"><thead><tr><th>{{ t('group') }}</th><th>{{ t('count') }}</th></tr></thead><tbody>
+      {% for group, count in data.submissions_by_group %}<tr><td>{{ group }}</td><td>{{ count }}</td></tr>{% else %}<tr><td colspan="2">{{ t('no_submission_general') }}</td></tr>{% endfor %}
+      </tbody></table></div>
+    </div></section>
+  </div>
+  <div class="col-12 col-lg-6">
+    <section class="card shadow-sm h-100"><div class="card-body p-4">
+      <h2 class="h4">{{ t('students_without_submission') }}</h2>
+      <div class="table-responsive"><table class="table align-middle"><thead><tr><th>{{ t('group') }}</th><th>{{ t('student') }}</th></tr></thead><tbody>
+      {% for st in data.students_without_submission %}<tr><td>{{ st.group }}</td><td>{{ st.animal }} {{ st.first_name }} {{ st.last_name }}</td></tr>{% else %}<tr><td colspan="2">{{ t('not_available') }}</td></tr>{% endfor %}
+      </tbody></table></div>
+    </div></section>
+  </div>
+
+  <div class="col-12 col-lg-6">
+    <section class="card shadow-sm h-100"><div class="card-body p-4">
+      <h2 class="h4">{{ t('latest_compile_errors') }}</h2>
+      <div class="table-responsive"><table class="table align-middle"><thead><tr><th>ID</th><th>{{ t('student') }}</th><th>{{ t('message') }}</th></tr></thead><tbody>
+      {% for s in data.latest_compile_errors %}<tr><td><a href="/submission/{{ s.submission_id }}">{{ s.submission_id }}</a></td><td>{{ s.animal }} {{ s.first_name }} {{ s.last_name }}</td><td>{{ s.message }}</td></tr>{% else %}<tr><td colspan="3">{{ t('not_available') }}</td></tr>{% endfor %}
+      </tbody></table></div>
+    </div></section>
+  </div>
+  <div class="col-12 col-lg-6">
+    <section class="card shadow-sm h-100"><div class="card-body p-4">
+      <h2 class="h4">{{ t('top_recurrent_errors') }}</h2>
+      <div class="table-responsive"><table class="table align-middle"><thead><tr><th>{{ t('error_category') }}</th><th>{{ t('message') }}</th><th>{{ t('count') }}</th></tr></thead><tbody>
+      {% for cat, msg, count in data.top_errors %}<tr><td>{{ t(cat) }}</td><td>{{ msg }}</td><td>{{ count }}</td></tr>{% else %}<tr><td colspan="3">{{ t('not_available') }}</td></tr>{% endfor %}
+      </tbody></table></div>
+    </div></section>
+  </div>
+
+  <div class="col-12 col-lg-6">
+    <section class="card shadow-sm h-100"><div class="card-body p-4">
+      <h2 class="h4">{{ t('canceled_submissions') }}</h2>
+      <div class="table-responsive"><table class="table align-middle"><thead><tr><th>ID</th><th>{{ t('student') }}</th><th>{{ t('date') }}</th></tr></thead><tbody>
+      {% for s in data.canceled %}<tr><td><a href="/submission/{{ s.submission_id }}">{{ s.submission_id }}</a></td><td>{{ s.animal }} {{ s.first_name }} {{ s.last_name }}</td><td>{{ s.submitted_at }}</td></tr>{% else %}<tr><td colspan="3">{{ t('not_available') }}</td></tr>{% endfor %}
+      </tbody></table></div>
+    </div></section>
+  </div>
+  <div class="col-12 col-lg-6">
+    <section class="card shadow-sm h-100"><div class="card-body p-4">
+      <h2 class="h4">{{ t('timeout_submissions') }}</h2>
+      <div class="table-responsive"><table class="table align-middle"><thead><tr><th>ID</th><th>{{ t('student') }}</th><th>{{ t('status') }}</th></tr></thead><tbody>
+      {% for s in data.timeouts %}<tr><td><a href="/submission/{{ s.submission_id }}">{{ s.submission_id }}</a></td><td>{{ s.animal }} {{ s.first_name }} {{ s.last_name }}</td><td>{{ s.status }}</td></tr>{% else %}<tr><td colspan="3">{{ t('not_available') }}</td></tr>{% endfor %}
+      </tbody></table></div>
+    </div></section>
+  </div>
+
+  <div class="col-12">
+    <section class="card shadow-sm"><div class="card-body p-4">
+      <h2 class="h4">{{ t('best_global_scores') }}</h2>
+      <div class="table-responsive"><table class="table align-middle"><thead><tr><th>{{ t('rank') }}</th><th>{{ t('student') }}</th><th>{{ t('group') }}</th><th>{{ t('score') }}</th><th>{{ t('heuristic') }}</th><th>ID</th></tr></thead><tbody>
+      {% for s in data.best_global %}<tr><td>{{ s.rank }}</td><td>{{ s.animal }} {{ s.first_name }} {{ s.last_name }}</td><td>{{ s.group }}</td><td>{{ s.score_total }}</td><td>{{ s.heuristic_name }}</td><td><a href="/submission/{{ s.submission_id }}">{{ s.submission_id }}</a></td></tr>{% else %}<tr><td colspan="6">{{ t('not_available') }}</td></tr>{% endfor %}
+      </tbody></table></div>
+    </div></section>
+  </div>
+
+  <div class="col-12">
+    <section class="card shadow-sm"><div class="card-body p-4">
+      <h2 class="h4">{{ t('best_instance_scores') }}</h2>
+      <div class="table-responsive"><table class="table align-middle"><thead><tr><th>{{ t('rank') }}</th><th>{{ t('student') }}</th><th>{{ t('score') }}</th><th>ID</th></tr></thead><tbody>
+      {% for s in data.best_instance %}<tr class="instance-label-row"><td colspan="4"><strong>{{ s.instance }}</strong></td></tr><tr><td>{{ s.rank }}</td><td>{{ s.animal }} {{ s.first_name }} {{ s.last_name }}</td><td>{{ s.score }}</td><td><a href="/submission/{{ s.submission_id }}">{{ s.submission_id }}</a></td></tr>{% else %}<tr><td colspan="4">{{ t('not_available') }}</td></tr>{% endfor %}
+      </tbody></table></div>
+    </div></section>
+  </div>
+</div>
+<script>
+const adminSummaryCsrfToken = {{ csrf_token()|tojson }};
+async function refreshAdminSummarySystem(){
+  const r = await fetch(`/api/admin/system`, {cache:'no-store'});
+  if(!r.ok) return;
+  const data = await r.json();
+  const cpu = document.getElementById('admin-cpu');
+  const ram = document.getElementById('admin-ram');
+  if(cpu) cpu.textContent = data.cpu_percent === null || data.cpu_percent === undefined ? '—%' : `${data.cpu_percent}%`;
+  if(ram) ram.textContent = data.ram_percent === null || data.ram_percent === undefined ? '—%' : `${data.ram_percent}%`;
+}
+refreshAdminSummarySystem();
+setInterval(refreshAdminSummarySystem, 5000);
+setInterval(() => { if(!document.hidden) window.location.reload(); }, 30000);
+</script>
+{% endblock %}

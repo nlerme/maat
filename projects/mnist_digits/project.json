@@ -1,0 +1,53 @@
+{
+  "project":
+  {
+    "id":                {"value": "mnist_digits", "comment": "Unique project identifier."},
+    "title":             {"value": {"fr": "Classification de chiffres", "en": "Digit classification"}, "comment": "Project title displayed in MAAT."},
+    "description":       {"value": {"fr": "Classifier des images de chiffres manuscrits de type MNIST.", "en": "Classify MNIST-like handwritten digit images."}, "comment": "Project description displayed in MAAT."},
+    "allowed_languages": {"value": ["python"], "comment": "Language profiles accepted for this project."},
+    "default_language":  {"value": "python", "comment": "Default language used when no language is explicitly selected."}
+  },
+  "interface":
+  {
+    "school_name":   {"value": {"fr": "Ecole / Université", "en": "School name / University"}, "comment": "School name displayed in the web interface and generated documents."},
+    "course_name":   {"value": {"fr": "Plateforme de projets", "en": "Project platform"}, "comment": "Course name displayed in the web interface and generated documents."},
+    "student_level": {"value": {"fr": "Version multi-langages", "en": "Multi-language version"}, "comment": "Student level or subtitle displayed in the web interface and generated documents."}
+  },
+  "students":
+  {
+    "roster_xlsx_path":       {"value": "documents/students.xlsx", "comment": "Path to the project roster workbook relative to this project directory."},
+    "generated_students_csv": {"value": "documents/students.csv", "comment": "CSV file generated from the project roster and used by the server."}
+  },
+  "submission_limits":
+  {
+    "cooldown_seconds":         {"value": 300, "comment": "Minimum delay between accepted submissions for one token."},
+    "max_zip_size_mb":          {"value": 20, "comment": "Maximum uploaded ZIP size in megabytes."},
+    "max_file_count_per_zip":   {"value": 100, "comment": "Maximum number of entries allowed in one ZIP archive."},
+    "max_uncompressed_size_mb": {"value": 80, "comment": "Maximum total uncompressed size accepted from one ZIP archive."},
+    "max_output_bytes":         {"value": 200000, "comment": "Maximum stdout/stderr bytes kept and displayed per stream."}
+  },
+  "teaching_session":
+  {
+    "timer_enabled":             {"value": true, "comment": "Enable or disable the teaching-session countdown and submission deadline."},
+    "duration_minutes":          {"value": 240, "comment": "Duration of the teaching session in minutes when the timer is enabled."},
+    "snapshot_interval_minutes": {"value": 30, "comment": "Interval between automatic leaderboard snapshots."},
+    "snapshot_directory":        {"value": "results/snapshots", "comment": "Directory where leaderboard snapshots are written, relative to this project directory."}
+  },
+  "directories":
+  {
+    "documents_directory": {"value": "documents", "comment": "Project-local directory where MAAT stores documents, rosters, tokens and SQLite state."},
+    "results_directory":   {"value": "results", "comment": "Project-local directory where MAAT writes leaderboards, snapshots and exports."}
+  },
+  "data":
+  {
+    "data_directory":    {"value": "data", "comment": "Project data directory relative to this project directory."},
+    "instances_pattern": {"value": "digits_*.csv", "comment": "Glob pattern selecting the 12 digit-classification instances; filenames include category, seed, sample count and noise level."},
+    "support_files":     {"value": ["train_digits.csv"], "comment": "Additional project data files mounted read-only beside the instances."}
+  },
+  "scoring":
+  {
+    "primary_metric": {"value": "accuracy", "comment": "Metric used for ranking."},
+    "metrics":        {"value": [{"name": "accuracy", "label": {"fr": "Accuracy (%)", "en": "Accuracy (%)"}, "regex": "final accuracy\\s*(?:->|:)\\s*([-+]?\\d+(?:\\.\\d+)?(?:[eE][-+]?\\d+)?)", "type": "float", "aggregation": "mean", "higher_is_better": true, "precision": 2}], "comment": "Metrics parsed from stdout."},
+    "output_format":  {"value": "final accuracy -> <percentage>", "comment": "Expected final stdout metric line displayed to students."}
+  }
+}

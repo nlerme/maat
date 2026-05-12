@@ -1,0 +1,67 @@
+{
+  "id": "cpp",
+  "name": {
+    "fr": "C++",
+    "en": "C++"
+  },
+  "docker_image": "maat-cpp-runner:latest",
+  "allowed_extensions": [
+    ".c",
+    ".cc",
+    ".cpp",
+    ".cxx",
+    ".h",
+    ".hh",
+    ".hpp",
+    ".hxx"
+  ],
+  "entrypoints": [
+    "src/main.cpp",
+    "main.cpp"
+  ],
+  "allow_custom_build_file": false,
+  "build_command": "set -e; rm -f main; find . -name '*.o' -type f -delete; if [ -d src ]; then g++ -std=c++17 -O2 -Wall -Wextra -Wpedantic -fopenmp -Iinclude src/*.cpp -o main -lm; else g++ -std=c++17 -O2 -Wall -Wextra -Wpedantic -fopenmp *.cpp -o main -lm; fi; test -x main",
+  "run_command": "./main {instance_file}",
+  "compile_timeout_seconds": 30,
+  "run_timeout_seconds": 180,
+  "compile_resources": {
+    "cpus": "4",
+    "memory": "2g",
+    "pids_limit": 256
+  },
+  "run_resources": {
+    "cpus": "2",
+    "memory": "512m",
+    "pids_limit": 128
+  },
+  "forbidden_patterns": [
+    "system",
+    "popen",
+    "_popen",
+    "fork",
+    "vfork",
+    "clone",
+    "clone3",
+    "exec",
+    "execl",
+    "execlp",
+    "execle",
+    "execv",
+    "execvp",
+    "execvpe",
+    "execve",
+    "fexecve",
+    "posix_spawn",
+    "posix_spawnp",
+    "ptrace",
+    "syscall",
+    "dlopen",
+    "dlsym",
+    "std::filesystem::remove_all",
+    "CreateProcess",
+    "ShellExecute",
+    "WinExec",
+    "NSTask",
+    "Process"
+  ]
+}

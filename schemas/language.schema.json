@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MAAT language profile",
+  "type": "object",
+  "required": [
+    "id",
+    "docker_image",
+    "allowed_extensions",
+    "entrypoints",
+    "build_command",
+    "run_command"
+  ],
+  "additionalProperties": true
+}

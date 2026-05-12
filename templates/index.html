@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block content %}
+{% if error %}<div class="alert alert-danger" role="alert">{{ error }}{% if remaining %} {{ t('remaining_time', duration=remaining_human|default(remaining)) }}{% endif %}</div>{% endif %}
+{% if submissions_paused %}<div class="alert alert-warning" role="alert">{{ t('submissions_paused') }}</div>{% endif %}
+{% if session_timer_enabled and session_remaining_seconds <= 0 %}<div class="alert alert-warning" role="alert">{{ t('session_finished') }}</div>{% endif %}
+
+<section class="card shadow-sm mb-4"><div class="card-body p-4">
+  <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
+    <div>
+      <h1 class="h2 mb-2">{{ cfg.project_title }}</h1>
+      <p class="lead mb-1">{{ cfg.project_description }}</p>
+      <p class="text-body-secondary mb-0">{{ t('active_project') }} : <code>{{ cfg.project_id }}</code> · {{ t('allowed_languages') }} : {% for l in cfg.allowed_languages %}<code>{{ l }}</code>{% if not loop.last %}, {% endif %}{% endfor %}</p>
+    </div>
+    <div class="text-lg-end"><span class="badge rounded-pill text-bg-info">{{ cfg.app_title }}</span></div>
+  </div>
+</div></section>
+
+<section class="card shadow-sm mb-4"><div class="card-body p-4">
+  <h2 class="h4">{{ t('project_rules_title') }}</h2>
+  <div class="row g-3">
+    <div class="col-12 col-lg-6">
+      <ul class="mb-0">
+        <li>{{ t('project_rules_archive') }}</li>
+        <li>{{ t('project_rules_extensions', value=cfg.allowed_source_extensions|join(', ')) }}</li>
+        <li>{{ t('project_rules_timeouts', build=cfg.compile_timeout_seconds, run=cfg.run_timeout_seconds) }}</li>
+        <li>{{ t('project_rules_docker') }}</li>
+      </ul>
+    </div>
+    <div class="col-12 col-lg-6">
+      <p class="mb-2"><strong>{{ t('expected_stdout_format') }}</strong></p>
+      <pre class="format-box mb-0">{{ cfg.output_format }}</pre>
+      <p class="mt-3 mb-1"><strong>{{ t('metrics_label') }}</strong></p>
+      <ul class="mb-0">{% for m in project_metrics %}<li><code>{{ m.name }}</code> — {{ m.label if m.label is string else (m.label[lang] if m.label and lang in m.label else m.name) }} — {{ t('optimize_max') if m.higher_is_better else t('optimize_min') }}</li>{% endfor %}</ul>
+    </div>
+  </div>
+</div></section>
+
+<section class="card shadow-sm mb-4"><div class="card-body p-4 p-lg-5">
+  <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mb-4">
+    <div><h2 class="h3 mb-2">{{ t('home_title') }}</h2><p class="text-body-secondary mb-0">{{ t('home_lead') }}</p></div>
+  </div>
+  <form id="submission-form" class="row g-3" action="/submit" method="post" enctype="multipart/form-data">
+    <input type="hidden" name="browser_fingerprint" id="browser_fingerprint" value="">
+    <div class="col-12 col-lg-3"><label class="form-label fw-semibold" for="token">{{ t('token_label') }}</label><input id="token" name="token" class="form-control form-control-lg" type="password" autocomplete="off" required placeholder="{{ t('token_placeholder') }}"><div class="form-text">{{ t('token_help') }}</div></div>
+    <div class="col-12 col-lg-3"><label class="form-label fw-semibold" for="heuristic_name">{{ t('approach_name') }}</label><input id="heuristic_name" name="heuristic_name" class="form-control form-control-lg" type="text" autocomplete="off" maxlength="80" required placeholder="ex. nearest-neighbor" value="{{ heuristic_name|default('') }}"><div class="form-text">{{ t('approach_help') }}</div></div>
+    <div class="col-12 col-lg-3"><label class="form-label fw-semibold" for="language">{{ t('language') }}</label><select id="language" name="language" class="form-select form-select-lg" required>{% for l in cfg.allowed_languages %}<option value="{{ l }}" {% if l == cfg.default_language %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+    <div class="col-12 col-lg-3"><label class="form-label fw-semibold" for="file">{{ t('zip_label') }}</label><input id="file" name="file" class="form-control form-control-lg" type="file" accept=".zip" required></div>
+    <div class="col-12 d-flex justify-content-center"><button id="submit-button" class="btn btn-maat-submit btn-lg px-lg-5" type="submit" {% if (session_timer_enabled and session_remaining_seconds <= 0) or submissions_paused %}disabled{% endif %}>{{ t('submit_button') }}</button></div>
+  </form>
+</div></section>
+
+<section class="card shadow-sm mb-4"><div class="card-body p-4">
+  <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2 mb-2"><h2 class="h4 mb-0">{{ t('local_submissions_title') }}</h2><span class="badge rounded-pill text-bg-info">{{ t('auto_refresh') }}</span></div>
+  <p class="text-body-secondary">{{ t('local_submissions_help') }}</p>
+  {% include "_status_legend.html" %}
+  <div class="table-responsive"><table class="table table-hover align-middle" id="local-submissions-table"><thead><tr><th>{{ t('submission_id') }}</th><th>{{ t('status') }}</th><th>{{ t('approach') }}</th><th>{{ t('language') }}</th><th>{{ t('main_metric') }}</th><th>{{ t('instances_passed') }}</th><th>{{ t('instances_failed') }}</th><th>{{ t('date') }}</th><th>{{ t('download_report') }}</th></tr></thead><tbody id="local-submissions"><tr><td colspan="9">{{ t('no_local_submissions') }}</td></tr></tbody></table></div>
+</div></section>
+<script>window.LOCAL_I18N = {{ i18n|tojson }}; window.STATUS_META = {{ status_meta|tojson }};</script>
+{% endblock %}
